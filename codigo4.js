@@ -1,84 +1,86 @@
 
 const fs = require("fs");
 
-
-
 class Contenedor {
-    constructor(fileName) {
-        this.puntoId = 1;
-        this.fileName = fileName;
-        this.productos = [];
-    }
+  constructor(fileName) {
+    this.fileName = fileName;
+    this.obj = this.readData(this.fileName) || [];
+  }
 
-    async getAll() {
-        let archivos
-        try{
-            archivos= JSON.parse(await fs.promises.readFile(this.fileName, 'utf-8'));
-            return archivos;
-        }
-        catch(err){
-            throw new Error('error read file')
-        }
+  async getId() {
+    try {
+      this.obj = (await this.getAll()) || [];
+      let puntoId = this.obj.length;
+      this.obj.forEach((el) => {
+        el.id > puntoId ? (puntoId = el.id) : puntoId;
+      });
+      return puntoId + 1;
+    } catch (err) {
+      console.log(err);
     }
+  }
 
-    async deleteAll() {
-        let archivos2 = [];
-        try{
-            await fs.promises.writeFile(this.fileName, JSON.stringify(archivos2));
-        }
-        catch (err){
-            throw new err('error writing file');
-        }
+  async save(objetos) {
+    try {
+      const readFile = await this.getAll();
+      if (!readFile) {
+        objetos.id = await this.getId();
+        this.objects.push(objetos);
+        this.writeData(this.obj);
+        return objetos.id;
+      }
+      this.obj = readFile;
+      objetos.id = await this.getId();
+      this.objects.push(objetos);
+      this.writeData(this.objects);
+      return objetos.id;
+    } catch (err) {
+      console.log(err);
     }
-
-    async save(object){
-        let newObject = {...object, id: this.puntoId}
-        this.productos.push(newObject)
-        async function write(file, arr){
-            try{
-                await fs.promises.writeFile(file, JSON.stringify(arr, null, 2));
-            }
-            catch (err){
-                throw new Error('error writing file');
-            }
-        }
-        await write(this.fileName, this.productos);
-        this.puntoId++;
-        return newObject.id;
+  }
+  async getById(id) {
+    try {
+      this.obj = await this.getAll();
+      const obje = this.objects.find((el) => el.id === Number(id));
+      return obje ? obje : null;
+    } catch (err) {
+      console.log(err);
     }
+  }
 
-    async deleteById(id) {
-        let newProdFile = []
-        try {
-            let prodFile = JSON.parse(await fs.promises.readFile(this.fileName, 'utf-8'))
-            prodFile.forEach((prod) => {
-                if (prod.id !== id) {
-                    newProdFile.push(prod)
-                }
-            })
-            await fs.promises.writeFile(this.fileName, JSON.stringify(newProdFile))
-        } catch (err) {
-            throw new Error('error delete product')
-        }
+  async getAll() {
+    try {
+      const data = await this.readData(this.fileName);
+      return data;
+    } catch (err) {
+      console.log(err);
     }
+  }
 
-    async getById(id) {
-        let e
-        try {
-            let prodFile = JSON.parse(await fs.promises.readFile(this.fileName, 'utf-8'))
-            prodFile.forEach((prod) => {
-                if (prod.id === id) {
-                    e = prod;
-                }
-            })
-            if (e) {
-                return e;
-            } else {
-                return null
-            }
-        } catch (err) {
-            throw new Error('error read file')
-        }
+  async deleteById(id) {
+    try {
+      this.obj = await this.getAll();
+      this.obj = [];
+      this.writeData(this.obj);
+    } catch (err) {
+      console.log(err);
     }
+  }
 
+  async deleteAll() {
+    try {
+      this.objects = await this.getAll();
+      this.objects = [];
+      this.writeData(this.objects);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+  readData(path) {
+    const data = JSON.parse(fs.readFileSync(path, "utf-8"));
+    return data;
+  }
+  writeData(obj) {
+    fs.writeFileSync(this.fileName, JSON.stringify(obj, null, 2));
+  }
 }
